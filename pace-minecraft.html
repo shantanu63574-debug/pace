@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pace's World</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --grass: #5C8A1B;
+    --grass-light: #7EC420;
+    --dirt: #8B5E3C;
+    --dirt-light: #A0714F;
+    --stone: #7F7F7F;
+    --stone-dark: #555;
+    --sky: #6AB4F5;
+    --sky-dark: #3A8DD4;
+    --creeper: #7EC420;
+    --wood: #B8782A;
+    --gold: #FFD700;
+    --diamond: #00DFFF;
+    --redstone: #FF3333;
+    --night: #0A0E1A;
+    --night2: #111827;
+    --pixel: 4px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'VT323', monospace;
+    background: var(--night);
+    color: #E8E8E8;
+    overflow-x: hidden;
+    image-rendering: pixelated;
+  }
+
+  /* ===== STARS ===== */
+  .stars {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+  }
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 0;
+    animation: twinkle 2s infinite alternate;
+  }
+  @keyframes twinkle { from { opacity: 0.3; } to { opacity: 1; } }
+
+  /* ===== FLOATING BLOCKS ===== */
+  .floating-blocks {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+    overflow: hidden;
+  }
+  .fblock {
+    position: absolute;
+    width: 32px; height: 32px;
+    animation: floatUp linear infinite;
+    opacity: 0.18;
+    image-rendering: pixelated;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.18; }
+    90% { opacity: 0.18; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+
+  /* ===== NAV ===== */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,14,26,0.92);
+    border-bottom: 4px solid var(--grass);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 40px;
+    backdrop-filter: blur(4px);
+  }
+  .nav-logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    color: var(--grass-light);
+    text-shadow: 2px 2px 0 #2d4a08;
+    letter-spacing: 2px;
+  }
+  .nav-links { display: flex; gap: 24px; }
+  .nav-links a {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #aaa;
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+    padding: 4px 8px;
+    border: 2px solid transparent;
+  }
+  .nav-links a:hover {
+    color: var(--grass-light);
+    border-color: var(--grass);
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative; z-index: 1;
+    text-align: center;
+    padding: 80px 20px 40px;
+  }
+
+  /* Pixelated sun */
+  .sun {
+    width: 80px; height: 80px;
+    background: var(--gold);
+    box-shadow: 4px 4px 0 #B8860B;
+    margin-bottom: 32px;
+    position: relative;
+    animation: sunPulse 3s ease-in-out infinite;
+  }
+  .sun::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 48px; height: 48px;
+    background: #FFE44D;
+  }
+  @keyframes sunPulse {
+    0%, 100% { transform: scale(1); box-shadow: 4px 4px 0 #B8860B; }
+    50% { transform: scale(1.05); box-shadow: 4px 4px 0 #B8860B, 0 0 40px rgba(255,215,0,0.3); }
+  }
+
+  .hero-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(28px, 5vw, 56px);
+    color: #fff;
+    text-shadow: 4px 4px 0 var(--grass), 8px 8px 0 #2d4a08;
+    line-height: 1.4;
+    margin-bottom: 16px;
+    animation: titleDrop 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+  @keyframes titleDrop {
+    from { transform: translateY(-40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .hero-sub {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(10px, 2vw, 14px);
+    color: var(--grass-light);
+    text-shadow: 2px 2px 0 #2d4a08;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    animation: fadeIn 1s 0.4s both;
+  }
+
+  .hero-tagline {
+    font-size: 22px;
+    color: #aaa;
+    margin-bottom: 48px;
+    animation: fadeIn 1s 0.6s both;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Pixel face / Steve */
+  .steve {
+    width: 96px; height: 96px;
+    margin: 0 auto 32px;
+    position: relative;
+    animation: steveBob 2s ease-in-out infinite;
+  }
+  @keyframes steveBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .pixel-face {
+    display: grid;
+    grid-template-columns: repeat(8, 12px);
+    grid-template-rows: repeat(8, 12px);
+    gap: 0;
+  }
+  .px { width: 12px; height: 12px; }
+
+  /* CTA Button */
+  .btn-mc {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    background: var(--grass);
+    color: #fff;
+    border: none;
+    padding: 16px 32px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    box-shadow: 0 6px 0 #2d4a08, 4px 4px 0 rgba(0,0,0,0.5);
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-decoration: none;
+    display: inline-block;
+    animation: fadeIn 1s 0.8s both;
+  }
+  .btn-mc:hover {
+    transform: translateY(2px);
+    box-shadow: 0 4px 0 #2d4a08, 2px 2px 0 rgba(0,0,0,0.5);
+  }
+  .btn-mc:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #2d4a08;
+  }
+
+  /* Ground strip */
+  .ground {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 64px;
+    display: flex; flex-direction: column;
+  }
+  .ground-grass { height: 20px; background: var(--grass); }
+  .ground-dirt { height: 44px; background: var(--dirt); }
+
+  /* Dirt pattern */
+  .ground-dirt { background: repeating-linear-gradient(
+    0deg,
+    var(--dirt) 0px,
+    var(--dirt) 10px,
+    var(--dirt-light) 10px,
+    var(--dirt-light) 11px
+  ); }
+
+  /* ===== SECTION STYLES ===== */
+  section {
+    position: relative; z-index: 1;
+    padding: 80px 40px;
+  }
+  .section-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(14px, 2.5vw, 22px);
+    color: var(--grass-light);
+    text-shadow: 2px 2px 0 #2d4a08;
+    margin-bottom: 48px;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  .section-title::before { content: '> '; color: var(--stone); }
+
+  /* ===== ABOUT ===== */
+  .about-section {
+    background: rgba(255,255,255,0.03);
+    border-top: 4px solid var(--grass);
+    border-bottom: 4px solid var(--grass);
+  }
+  .about-grid {
+    max-width: 900px; margin: 0 auto;
+    display: grid; grid-template-columns: auto 1fr; gap: 48px;
+    align-items: start;
+  }
+  .about-avatar {
+    width: 160px;
+  }
+  .creeper-face {
+    display: grid;
+    grid-template-columns: repeat(10, 16px);
+    grid-template-rows: repeat(10, 16px);
+    gap: 0;
+    animation: creeperBlink 6s ease-in-out infinite;
+  }
+  @keyframes creeperBlink {
+    0%, 94%, 100% { filter: none; }
+    95%, 98% { filter: brightness(2) drop-shadow(0 0 8px #7EC420); }
+  }
+  .cpx { width: 16px; height: 16px; }
+  .about-text h3 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+  .about-text p {
+    font-size: 20px;
+    color: #bbb;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .about-text .highlight { color: var(--grass-light); }
+
+  /* ===== INVENTORY / SKILLS ===== */
+  .inventory-section { background: rgba(0,0,0,0.3); }
+  .inventory-grid {
+    max-width: 800px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+  }
+  .inv-slot {
+    background: #1C1C1C;
+    border: 4px solid #555;
+    border-right-color: #222;
+    border-bottom-color: #222;
+    padding: 20px 16px;
+    text-align: center;
+    cursor: default;
+    transition: transform 0.15s, border-color 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .inv-slot:hover {
+    transform: translateY(-4px);
+    border-color: var(--grass);
+    border-right-color: #2d4a08;
+    border-bottom-color: #2d4a08;
+  }
+  .inv-slot:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%; transform: translateX(-50%);
+    background: #111;
+    border: 2px solid var(--grass);
+    color: var(--grass-light);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 6px 10px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .inv-icon {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 10px;
+    image-rendering: pixelated;
+  }
+  .inv-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #ddd;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .inv-level {
+    display: flex; gap: 2px; justify-content: center;
+    flex-wrap: wrap;
+  }
+  .lvl-bar {
+    width: 8px; height: 8px;
+    background: var(--grass);
+    display: inline-block;
+  }
+  .lvl-bar.empty { background: #333; }
+
+  /* ===== STATS ===== */
+  .stats-section {
+    background: rgba(255,255,255,0.02);
+    border-top: 4px solid var(--stone);
+    border-bottom: 4px solid var(--stone);
+  }
+  .stats-grid {
+    max-width: 900px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+  }
+  .stat-card {
+    background: #111;
+    border: 4px solid var(--stone-dark);
+    padding: 28px 20px;
+    text-align: center;
+    position: relative;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 4px;
+    background: var(--diamond);
+  }
+  .stat-num {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 28px;
+    color: var(--diamond);
+    text-shadow: 2px 2px 0 #004E5A;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .stat-label {
+    font-size: 18px;
+    color: #777;
+    display: block;
+  }
+
+  /* ===== HEALTH BAR ===== */
+  .health-section {
+    max-width: 700px;
+    margin: 0 auto 60px;
+    text-align: center;
+  }
+  .health-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: var(--redstone);
+    margin-bottom: 12px;
+    display: block;
+  }
+  .hearts {
+    display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
+  }
+  .heart { font-size: 28px; animation: heartbeat 1.5s ease-in-out infinite; }
+  .heart:nth-child(even) { animation-delay: 0.75s; }
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    30% { transform: scale(1.15); }
+  }
+
+  /* ===== ACHIEVEMENTS ===== */
+  .ach-section {
+    background: rgba(0,0,0,0.2);
+  }
+  .ach-grid {
+    max-width: 900px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  .ach-card {
+    background: #1A1A1A;
+    border: 3px solid var(--wood);
+    padding: 20px;
+    display: flex; gap: 16px; align-items: center;
+    transition: border-color 0.2s, transform 0.2s;
+    animation: achSlide 0.6s both;
+  }
+  @keyframes achSlide {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .ach-card:nth-child(2) { animation-delay: 0.1s; }
+  .ach-card:nth-child(3) { animation-delay: 0.2s; }
+  .ach-card:nth-child(4) { animation-delay: 0.3s; }
+  .ach-card:nth-child(5) { animation-delay: 0.4s; }
+  .ach-card:nth-child(6) { animation-delay: 0.5s; }
+  .ach-card:hover {
+    border-color: var(--gold);
+    transform: translateX(4px);
+  }
+  .ach-icon { font-size: 36px; flex-shrink: 0; }
+  .ach-info h4 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .ach-info p { font-size: 16px; color: #888; }
+
+  /* ===== CONTACT ===== */
+  .contact-section {
+    background: rgba(0,0,0,0.4);
+    border-top: 4px solid var(--diamond);
+    text-align: center;
+  }
+  .contact-section p {
+    font-size: 22px;
+    color: #888;
+    margin-bottom: 32px;
+    max-width: 600px; margin-left: auto; margin-right: auto;
+  }
+  .contact-buttons {
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    margin-top: 32px;
+  }
+  .btn-contact {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    padding: 14px 24px;
+    border: 3px solid;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.1s, box-shadow 0.1s;
+    display: inline-block;
+  }
+  .btn-contact.diamond {
+    color: var(--diamond);
+    border-color: var(--diamond);
+    background: rgba(0,223,255,0.08);
+  }
+  .btn-contact.gold {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(255,215,0,0.08);
+  }
+  .btn-contact:hover { transform: translateY(-3px); }
+
+  /* ===== FOOTER ===== */
+  footer {
+    position: relative; z-index: 1;
+    background: #000;
+    border-top: 4px solid var(--grass);
+    padding: 32px 40px;
+    text-align: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #444;
+    letter-spacing: 1px;
+  }
+  footer span { color: var(--grass-light); }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 12px; }
+  ::-webkit-scrollbar-track { background: var(--night); }
+  ::-webkit-scrollbar-thumb { background: var(--grass); border: 2px solid var(--night); }
+
+  @media (max-width: 600px) {
+    .about-grid { grid-template-columns: 1fr; text-align: center; }
+    nav { padding: 12px 16px; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div class="stars" id="stars"></div>
+<!-- Floating blocks -->
+<div class="floating-blocks" id="floatingBlocks"></div>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">⛏ PACE</div>
+  <div class="nav-links">
+    <a href="#about">About</a>
+    <a href="#skills">Skills</a>
+    <a href="#achievements">Achievements</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="sun"></div>
+
+  <!-- Pixel Steve face -->
+  <div class="steve">
+    <div class="pixel-face" id="pixelFace"></div>
+  </div>
+
+  <h1 class="hero-title">PACE'S<br>WORLD</h1>
+  <p class="hero-sub">[ PLAYER ONE ]</p>
+  <p class="hero-tagline">Spawned in, ready to build amazing things.</p>
+  <a href="#about" class="btn-mc">▶ ENTER WORLD</a>
+
+  <div class="ground">
+    <div class="ground-grass"></div>
+    <div class="ground-dirt"></div>
+  </div>
+</section>
+
+<!-- ===== ABOUT ===== -->
+<section class="about-section" id="about">
+  <h2 class="section-title">ABOUT ME</h2>
+  <div class="about-grid">
+    <div class="about-avatar">
+      <div class="creeper-face" id="creeperFace"></div>
+    </div>
+    <div class="about-text">
+      <h3>Hey, I'm Pace! 👋</h3>
+      <p>Welcome to my corner of the internet — built block by block, just like a good base.</p>
+      <p>I'm a <span class="highlight">builder</span>, a <span class="highlight">creator</span>, and someone who believes every problem has a solution — you just need the right tools.</p>
+      <p>Whether it's in-game or in real life, I love crafting things that matter and making the world a little more awesome.</p>
+      <p>On a good day you'll find me <span class="highlight">exploring new ideas</span>, breaking a few blocks, and probably getting distracted by a Creeper.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HEALTH ===== -->
+<section style="padding: 40px;">
+  <div class="health-section">
+    <span class="health-label">❤ VIBES ❤</span>
+    <div class="hearts">
+      <span class="heart">❤️</span><span class="heart">❤️</span><span class="heart">❤️</span>
+      <span class="heart">❤️</span><span class="heart">❤️</span><span class="heart">❤️</span>
+      <span class="heart">❤️</span><span class="heart">❤️</span><span class="heart">❤️</span>
+      <span class="heart">❤️</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SKILLS / INVENTORY ===== -->
+<section class="inventory-section" id="skills">
+  <h2 class="section-title">INVENTORY</h2>
+  <div class="inventory-grid">
+    <div class="inv-slot" data-tooltip="LEGENDARY">
+      <span class="inv-icon">💎</span>
+      <span class="inv-name">CREATIVITY</span>
+      <div class="inv-level">
+        <span class="lvl-bar"></span><span class="lvl-bar"></span><span class="lvl-bar"></span>
+        <span class="lvl-bar"></span><span class="lvl-bar"></span>
+      </div>
+    </div>
+    <div class="inv-slot" data-tooltip="MAXED OUT">
+      <span class="inv-icon">🔥</span>
+      <span class="inv-name">PASSION</span>
+      <div class="inv-level">
+        <span class="lvl-bar"></span><span class="lvl-bar"></span><span class="lvl-bar"></span>
+        <span class="lvl-bar"></span><span class="lvl-bar"></span>
+      </div>
+    </div>
+    <div class="inv-slot" data-tooltip="EPIC">
+      <span class="inv-icon">🛡️</span>
+      <span class="inv-name">LOYALTY</span>
+      <div class="inv-level">
+        <span class="lvl-bar"></span><span class="lvl-bar"></span><span class="lvl-bar"></span>
+        <span class="lvl-bar"></span><span class="lvl-bar empty"></span>
+      </div>
+    </div>
+    <div class="inv-slot" data-tooltip="RARE">
+      <span class="inv-icon">⚡</span>
+      <span class="inv-name">ENERGY</span>
+      <div class="inv-level">
+        <span class="lvl-bar"></span><span class="lvl-bar"></span><span class="lvl-bar"></span>
+        <span class="lvl-bar empty"></span><span class="lvl-bar empty"></span>
+      </div>
+    </div>
+    <div class="inv-slot" data-tooltip="ENCHANTED">
+      <span class="inv-icon">🎯</span>
+      <span class="inv-name">FOCUS</span>
+      <div class="inv-level">
+        <span class="lvl-bar"></span><span class="lvl-bar"></span><span class="lvl-bar"></span>
+        <span class="lvl-bar"></span><span class="lvl-bar empty"></span>
+      </div>
+    </div>
+    <div class="inv-slot" data-tooltip="MAXED OUT">
+      <span class="inv-icon">😂</span>
+      <span class="inv-name">HUMOR</span>
+      <div class="inv-level">
+        <span class="lvl-bar"></span><span class="lvl-bar"></span><span class="lvl-bar"></span>
+        <span class="lvl-bar"></span><span class="lvl-bar"></span>
+      </div>
+    </div>
+    <div class="inv-slot" data-tooltip="LEGENDARY">
+      <span class="inv-icon">🤝</span>
+      <span class="inv-name">TEAMWORK</span>
+      <div class="inv-level">
+        <span class="lvl-bar"></span><span class="lvl-bar"></span><span class="lvl-bar"></span>
+        <span class="lvl-bar"></span><span class="lvl-bar"></span>
+      </div>
+    </div>
+    <div class="inv-slot" data-tooltip="EPIC">
+      <span class="inv-icon">🎨</span>
+      <span class="inv-name">STYLE</span>
+      <div class="inv-level">
+        <span class="lvl-bar"></span><span class="lvl-bar"></span><span class="lvl-bar"></span>
+        <span class="lvl-bar"></span><span class="lvl-bar empty"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== STATS ===== -->
+<section class="stats-section">
+  <h2 class="section-title">GAME STATS</h2>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-num" id="friendCount">0</span>
+      <span class="stat-label">Friends Made</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num" id="projectCount">0</span>
+      <span class="stat-label">Projects Built</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num" id="hourCount">0</span>
+      <span class="stat-label">Hours Grinding</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num" id="memeCount">0</span>
+      <span class="stat-label">Memes Sent</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ACHIEVEMENTS ===== -->
+<section class="ach-section" id="achievements">
+  <h2 class="section-title">ACHIEVEMENTS</h2>
+  <div class="ach-grid">
+    <div class="ach-card">
+      <div class="ach-icon">🏆</div>
+      <div class="ach-info">
+        <h4>BEST FRIEND</h4>
+        <p>Always there when it counts</p>
+      </div>
+    </div>
+    <div class="ach-card">
+      <div class="ach-icon">🌟</div>
+      <div class="ach-info">
+        <h4>SHINING STAR</h4>
+        <p>Brightest person in the room</p>
+      </div>
+    </div>
+    <div class="ach-card">
+      <div class="ach-icon">🎮</div>
+      <div class="ach-info">
+        <h4>GAMER FOREVER</h4>
+        <p>Never stopped playing</p>
+      </div>
+    </div>
+    <div class="ach-card">
+      <div class="ach-icon">🚀</div>
+      <div class="ach-info">
+        <h4>DREAM CHASER</h4>
+        <p>Goals set, goals destroyed</p>
+      </div>
+    </div>
+    <div class="ach-card">
+      <div class="ach-icon">🔥</div>
+      <div class="ach-info">
+        <h4>ON FIRE</h4>
+        <p>Unstoppable when motivated</p>
+      </div>
+    </div>
+    <div class="ach-card">
+      <div class="ach-icon">💎</div>
+      <div class="ach-info">
+        <h4>DIAMOND TIER</h4>
+        <p>Rare find, 1 in a million</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CONTACT ===== -->
+<section class="contact-section" id="contact">
+  <h2 class="section-title">SEND MESSAGE</h2>
+  <p>Drop a message. No Endermen, Creepers, or spam — just good vibes.</p>
+  <div class="contact-buttons">
+    <a href="#" class="btn-contact diamond">📧 EMAIL ME</a>
+    <a href="#" class="btn-contact gold">🎮 PLAY TOGETHER</a>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <p>Made with ❤ for <span>PACE</span> · Running on <span>Creative Mode</span> · v1.0.0</p>
+</footer>
+
+<script>
+// ===== STARS =====
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 120; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const size = Math.random() < 0.7 ? 2 : 4;
+  s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*4}s;animation-duration:${1.5+Math.random()*2}s`;
+  starsEl.appendChild(s);
+}
+
+// ===== FLOATING BLOCKS =====
+const blockColors = ['#5C8A1B','#8B5E3C','#7F7F7F','#FFD700','#00DFFF','#7EC420'];
+const fb = document.getElementById('floatingBlocks');
+for (let i = 0; i < 18; i++) {
+  const b = document.createElement('div');
+  b.className = 'fblock';
+  const c = blockColors[Math.floor(Math.random()*blockColors.length)];
+  const size = 16 + Math.floor(Math.random()*3)*8;
+  b.style.cssText = `left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${c};animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*10}s`;
+  fb.appendChild(b);
+}
+
+// ===== PIXEL STEVE FACE =====
+// 8x8 Steve face: skin tones
+const sf = document.getElementById('pixelFace');
+const steveMap = [
+  'T','T','T','T','T','T','T','T',
+  'T','S','S','S','S','S','S','T',
+  'T','S','E','S','S','E','S','T',
+  'T','S','S','S','S','S','S','T',
+  'T','S','N','S','S','S','S','T',
+  'T','S','M','M','M','M','S','T',
+  'T','S','S','S','S','S','S','T',
+  'T','T','T','T','T','T','T','T',
+];
+const steveColors = { T:'transparent', S:'#C6956A', E:'#1A1A1A', N:'#A0704A', M:'#7A3A1A' };
+steveMap.forEach(p => {
+  const px = document.createElement('div');
+  px.className = 'px';
+  px.style.background = steveColors[p] || 'transparent';
+  sf.appendChild(px);
+});
+
+// ===== CREEPER FACE =====
+const cf = document.getElementById('creeperFace');
+// 10x10 creeper face
+const creeperMap = [
+  0,0,0,0,0,0,0,0,0,0,
+  0,1,1,0,0,0,0,1,1,0,
+  0,1,1,0,0,0,0,1,1,0,
+  0,0,0,0,0,0,0,0,0,0,
+  0,0,0,1,1,1,1,0,0,0,
+  0,0,0,1,1,1,1,0,0,0,
+  0,0,1,1,0,0,1,1,0,0,
+  0,0,1,0,0,0,0,1,0,0,
+  0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,
+];
+creeperMap.forEach(v => {
+  const px = document.createElement('div');
+  px.className = 'cpx';
+  px.style.background = v ? '#1A1A1A' : '#7EC420';
+  cf.appendChild(px);
+});
+
+// ===== COUNTER ANIMATION =====
+function animateCounter(el, target, duration = 1800) {
+  let start = 0;
+  const step = target / (duration / 16);
+  const tick = () => {
+    start = Math.min(start + step, target);
+    el.textContent = Math.floor(start) + (start >= target ? (target > 100 ? 'K+' : '+') : '');
+    if (start < target) requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+const statsObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      animateCounter(document.getElementById('friendCount'), 999);
+      animateCounter(document.getElementById('projectCount'), 47);
+      animateCounter(document.getElementById('hourCount'), 10);
+      animateCounter(document.getElementById('memeCount'), 9);
+      statsObserver.disconnect();
+    }
+  });
+});
+statsObserver.observe(document.querySelector('.stats-section'));
+</script>
+</body>
+</html>
